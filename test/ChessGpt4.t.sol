@@ -4,6 +4,16 @@ pragma solidity 0.8.19;
 import {ChessGame} from "../src/ChessGpt4.sol";
 import {Test} from "forge-std/Test.sol";
 
+/*
+Initial gas report
+| src/ChessGpt4.sol:ChessGame contract |                 |         |         |         |         |
+|--------------------------------------|-----------------|---------|---------|---------|---------|
+| Deployment Cost                      | Deployment Size |         |         |         |         |
+| 2214988                              | 8634            |         |         |         |         |
+| Function Name                        | min             | avg     | median  | max     | # calls |
+| move                                 | 2367958         | 2536847 | 2378563 | 3359366 | 7       |
+ */
+
 /// @dev Test our chess game gpt4 contract
 contract ChessGpt4Test is Test {
     /// @dev White address
@@ -62,7 +72,7 @@ contract ChessGpt4Test is Test {
 2 |p|p|p|p|p|p|p|p|
 1 |r|n|b|q|k|b|n|r|
    a b c d e f g h
-   _______________
+x  _______________
 7 |r|n|b|q|k|b|n|r|
 6 |p|p|p|_|_|q|p|p|
 5 |_|#|_|p|_|#|_|#|
@@ -71,7 +81,7 @@ contract ChessGpt4Test is Test {
 2 |#|_|#|_|#|_|#|_|
 1 |p|p|p|p|_|p|p|p|
 0 |r|n|b|_|k|_|n|r|
-   0 1 2 3 4 5 6 7
+   0 1 2 3 4 5 6 7 y
 
 
 
