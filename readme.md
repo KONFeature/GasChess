@@ -14,6 +14,44 @@ This project is a fully functional chess game implemented as a smart contract on
  - Implements pawn promotion and basic draw conditions (stalemate and insufficient material).
  - Validates and enforces game rules on-chain.
 
+## Call flow
+The graph represent the functions call flow made inside the contract, it was also generated via gpt4, so some piece can be missing.
+```mermaid
+graph TD
+    A[constructor] --> B[getSenderForAddress]
+    C[makeMove] --> D[isValidMove]
+    D --> E[validPawnMove]
+    E --> F[isEnPassantCapture]
+    D --> G[validKnightMove]
+    D --> H[validBishopMove]
+    D --> I[validRookMove]
+    D --> J[validQueenMove]
+    D --> K[validKingMove]
+    D --> L[isInCheck]
+    D --> M[getOpponent]
+    D --> N[moveLeavesKingInCheck]
+    C --> O[applyMove]
+    O --> P[isGameOver]
+    P --> Q[isCheckmate]
+    P --> R[isDraw]
+    P --> D{isValidMove}
+    C --> S[pawnPromotion]
+
+```
+
+## To-Do List
+- [ ] Features
+  - [ ] Implement comprehensive draw logic
+  - [ ] Analyze counter-movement pieces for game over conditions
+- [ ] Logic
+  - [ ] Optimize gameOver and draw checks to trigger only when in check
+- [ ] Gas Improvements:
+  - [ ] Replace uint8 with uint256 for better gas efficiency
+  - [ ] Avoid using signed integers (int8)
+  - [ ] Optimize loops for efficiency, including assembly where appropriate
+  - [ ] Utilize assembly and error codes for error handling, instead of strings
+  - [ ] Implement event handling via assembly
+
 ## Acknowledgements
 
  - This project was built with the assistance of SolGPT, an AI developed by OpenAI (based on chatGPT and gpt4).
