@@ -125,7 +125,6 @@ contract ChessGame {
     /// @dev Check if the given move is valid for the given `player` and `piece`, only check for the piece ovment, not check
     function validMoveForPiece(Player player, Piece memory piece, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY)
         internal
-        view
         returns (bool)
     {
         // Implement move validation logic for each piece type
@@ -145,11 +144,7 @@ contract ChessGame {
         return false;
     }
 
-    function validPawnMove(Player player, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY)
-        internal
-        view
-        returns (bool)
-    {
+    function validPawnMove(Player player, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal returns (bool) {
         // Ensure the value are right, we need position direction for the given player
         if (player == Player.White && fromX > toX) {
             return false;
@@ -187,14 +182,18 @@ contract ChessGame {
 
     function isEnPassantCapture(Player player, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY)
         internal
-        view
         returns (bool)
     {
         if ((player == Player.White && fromX == 4) || (player == Player.Black && fromX == 3)) {
-            uint8 targetY = player == Player.White ? toY - 1 : toY + 1;
-            if (lastMove[0] == toX && lastMove[1] == targetY) {
-                Piece memory capturedPawn = board[toX][fromX];
-                return capturedPawn.pieceType == PieceType.Pawn && capturedPawn.player != player;
+            uint8 targetX = player == Player.White ? toX - 1 : toX + 1;
+            if (lastMove[0] == targetX && lastMove[1] == toY) {
+                Piece memory capturedPawn = board[targetX][toY];
+                bool isEnPassant = capturedPawn.pieceType == PieceType.Pawn && capturedPawn.player != player;
+                // If that's an en passant capture, reset the position
+                if (isEnPassant) {
+                    board[targetX][toY] = Piece(PieceType.Empty, Player.None);
+                }
+                return isEnPassant;
             }
         }
         return false;
@@ -336,8 +335,13 @@ contract ChessGame {
             }
         }
 
+        // Update the pieces
         board[toX][toY] = piece;
         board[fromX][fromY] = Piece(PieceType.Empty, Player.None);
+
+        // Update the last move
+        lastMove[0] = toX;
+        lastMove[1] = toY;
 
         emit Move(msg.sender, fromX, fromY, toX, toY);
     }
