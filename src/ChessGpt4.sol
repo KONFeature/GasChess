@@ -33,13 +33,7 @@ contract ChessGame {
     Player public currentPlayer = Player.White;
     bool public gameEnded = false;
 
-    event Move(
-        address indexed player,
-        uint8 fromX,
-        uint8 fromY,
-        uint8 toX,
-        uint8 toY
-    );
+    event Move(address indexed player, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY);
     event GameOver(Player targetPlayer);
 
     constructor(address _whitePlayer, address _blackPlayer) {
@@ -72,77 +66,70 @@ contract ChessGame {
         }
     }
 
-    function move(
-        uint8 fromX,
-        uint8 fromY,
-        uint8 toX,
-        uint8 toY,
-        PieceType promotionPiece
-    ) external {
+    function move(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY, PieceType promotionPiece) external {
         require(!gameEnded, "Game has already ended.");
         require(validPlayer(fromX, fromY), "Invalid player.");
 
         Piece memory piece = board[fromX][fromY];
-
-        require(validMove(piece, fromX, fromY, toX, toY), "Invalid move.");
+        Player _currentPlayer = currentPlayer;
+        require(validMove(_currentPlayer, piece, fromX, fromY, toX, toY), "Invalid move.");
 
         applyMove(fromX, fromY, toX, toY, promotionPiece);
 
-        Player targetPlayer = currentPlayer == Player.White
-            ? Player.Black
-            : Player.White;
+        // Update the player o
+        Player targetPlayer = _currentPlayer == Player.White ? Player.Black : Player.White;
+        currentPlayer = targetPlayer;
 
-        if (isGameOver(targetPlayer)) {
+        // Check if that's a game over for the given player
+        /*if (isGameOver(targetPlayer)) {
             gameEnded = true;
             emit GameOver(targetPlayer);
             return;
-        }
-
-        // TODO : Also check for draw
-
-        currentPlayer = (currentPlayer == Player.White)
-            ? Player.Black
-            : Player.White;
+        }*/
     }
 
     function validPlayer(uint8 x, uint8 y) internal view returns (bool) {
-        return
-            msg.sender == getSenderForPlayer(currentPlayer) &&
-            board[x][y].player == currentPlayer;
+        return msg.sender == getSenderForPlayer(currentPlayer) && board[x][y].player == currentPlayer;
     }
 
-    event TestPiece(PieceType pieceType);
-
-    function validMove(
-        Piece memory piece,
-        uint8 fromX,
-        uint8 fromY,
-        uint8 toX,
-        uint8 toY
-    ) internal returns (bool) {
+    /// @dev Check if the given move is valid for the given `player` and `piece`
+    function validMove(Player player, Piece memory piece, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY)
+        internal
+        returns (bool)
+    {
         // Check that the move is within bounds
         if (toX > 7 || toY > 7) {
             return false;
         }
 
         // Ensure the piece belongs to the current player
-        if (piece.player != currentPlayer) {
+        if (piece.player != player) {
             return false;
         }
 
         // Check that the destination square is either empty or occupied by an opponent's piece
-        if (board[toX][toY].player == currentPlayer) {
+        if (board[toX][toY].player == player) {
             return false;
         }
 
         // Ensure the move doesn't leave the king in check
-        if (moveLeavesKingInCheck(fromX, fromY, toX, toY)) {
+        if (moveLeavesKingInCheck(player, fromX, fromY, toX, toY)) {
             return false;
         }
 
+        // Check the piece movment validity
+        return validMoveForPiece(player, piece, fromX, fromY, toX, toY);
+    }
+
+    /// @dev Check if the given move is valid for the given `player` and `piece`, only check for the piece ovment, not check
+    function validMoveForPiece(Player player, Piece memory piece, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY)
+        internal
+        view
+        returns (bool)
+    {
         // Implement move validation logic for each piece type
         if (piece.pieceType == PieceType.Pawn) {
-            return validPawnMove(fromX, fromY, toX, toY);
+            return validPawnMove(player, fromX, fromY, toX, toY);
         } else if (piece.pieceType == PieceType.Rook) {
             return validRookMove(fromX, fromY, toX, toY);
         } else if (piece.pieceType == PieceType.Bishop) {
@@ -154,46 +141,38 @@ contract ChessGame {
         } else if (piece.pieceType == PieceType.King) {
             return validKingMove(fromX, fromY, toX, toY);
         }
-
-        // Add move validation for Knight, Queen, and King
-
         return false;
     }
 
-    function validPawnMove(
-        uint8 fromX,
-        uint8 fromY,
-        uint8 toX,
-        uint8 toY
-    ) internal view returns (bool) {
-        int8 direction = (currentPlayer == Player.White) ? int8(1) : int8(-1);
+    function validPawnMove(Player player, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY)
+        internal
+        view
+        returns (bool)
+    {
+        // Ensure the value are right, we need position direction for the given player
+        if (player == Player.White) {
+            require(fromX < toX, "Invalid pawn move.");
+        } else {
+            require(fromX > toX, "Invalid pawn move.");
+        }
+        // Get distance
+        uint8 distanceX = fromX > toX ? fromX - toX : toX - fromX;
 
         if (fromY == toY) {
-            if (
-                toX == uint8(int8(fromX) + direction) &&
-                board[toX][toY].player == Player.None
-            ) {
+            // Same Y, just 1 distance, ok
+            if (distanceX == 1 && board[toX][toY].player == Player.None) {
                 return true;
             }
-            if (
-                (currentPlayer == Player.White && fromX == 1) ||
-                (currentPlayer == Player.Black && fromX == 6)
-            ) {
-                if (
-                    toX == fromX + uint8(2 * direction) &&
-                    board[toX][toY].player == Player.None
-                ) {
-                    return true;
-                }
+            // Same Y, 2 distance from start line
+            if (((player == Player.White && fromX == 1) || (player == Player.Black && fromX == 6)) && distanceX == 2) {
+                return true;
             }
-        } else if (
-            abs(int8(toY) - int8(fromY)) == 1 &&
-            toX == uint8(int8(fromX) + direction)
-        ) {
+        } else if (abs(int8(toY) - int8(fromY)) == 1 && distanceX == 1) {
+            // Check for capture
             if (board[toX][toY].player != Player.None) {
                 return true;
             }
-            if (isEnPassantCapture(fromX, fromY, toX, toY)) {
+            if (isEnPassantCapture(player, fromX, fromY, toX, toY)) {
                 return true;
             }
         }
@@ -201,39 +180,21 @@ contract ChessGame {
         return false;
     }
 
-    function isEnPassantCapture(
-        uint8 fromX,
-        uint8 fromY,
-        uint8 toX,
-        uint8 toY
-    ) internal view returns (bool) {
-        if (
-            (currentPlayer == Player.White && fromX == 4) ||
-            (currentPlayer == Player.Black && fromX == 3)
-        ) {
-            if (
-                lastMove[0] == toX &&
-                lastMove[1] ==
-                uint8(
-                    int8(toY) -
-                        (currentPlayer == Player.White ? int8(1) : int8(-1))
-                )
-            ) {
+    function isEnPassantCapture(Player player, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY)
+        internal
+        view
+        returns (bool)
+    {
+        if ((player == Player.White && fromX == 4) || (player == Player.Black && fromX == 3)) {
+            if (lastMove[0] == toX && lastMove[1] == uint8(int8(toY) - (player == Player.White ? int8(1) : int8(-1)))) {
                 Piece memory capturedPawn = board[toX][fromX];
-                return
-                    capturedPawn.pieceType == PieceType.Pawn &&
-                    capturedPawn.player != currentPlayer;
+                return capturedPawn.pieceType == PieceType.Pawn && capturedPawn.player != player;
             }
         }
         return false;
     }
 
-    function validRookMove(
-        uint8 fromX,
-        uint8 fromY,
-        uint8 toX,
-        uint8 toY
-    ) internal view returns (bool) {
+    function validRookMove(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal view returns (bool) {
         if (fromX != toX && fromY != toY) {
             return false;
         }
@@ -259,12 +220,7 @@ contract ChessGame {
         return false;
     }
 
-    function validBishopMove(
-        uint8 fromX,
-        uint8 fromY,
-        uint8 toX,
-        uint8 toY
-    ) internal view returns (bool) {
+    function validBishopMove(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal view returns (bool) {
         if (abs(int8(toX) - int8(fromX)) != abs(int8(toY) - int8(fromY))) {
             return false;
         }
@@ -286,49 +242,28 @@ contract ChessGame {
         return true;
     }
 
-    function validKnightMove(
-        uint8 fromX,
-        uint8 fromY,
-        uint8 toX,
-        uint8 toY
-    ) internal pure returns (bool) {
+    function validKnightMove(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal pure returns (bool) {
         int8 xDiff = int8(toX) - int8(fromX);
         int8 yDiff = int8(toY) - int8(fromY);
 
-        return
-            (abs(xDiff) == 2 && abs(yDiff) == 1) ||
-            (abs(xDiff) == 1 && abs(yDiff) == 2);
+        return (abs(xDiff) == 2 && abs(yDiff) == 1) || (abs(xDiff) == 1 && abs(yDiff) == 2);
     }
 
-    function validQueenMove(
-        uint8 fromX,
-        uint8 fromY,
-        uint8 toX,
-        uint8 toY
-    ) internal view returns (bool) {
-        return
-            validRookMove(fromX, fromY, toX, toY) ||
-            validBishopMove(fromX, fromY, toX, toY);
+    function validQueenMove(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal view returns (bool) {
+        return validRookMove(fromX, fromY, toX, toY) || validBishopMove(fromX, fromY, toX, toY);
     }
 
-    function validKingMove(
-        uint8 fromX,
-        uint8 fromY,
-        uint8 toX,
-        uint8 toY
-    ) internal pure returns (bool) {
+    function validKingMove(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal pure returns (bool) {
         uint8 xDiff = toX > fromX ? toX - fromX : fromX - toX;
         uint8 yDiff = toY > fromY ? toY - fromY : fromY - toY;
 
         return (xDiff <= 1) && (yDiff <= 1);
     }
 
-    function moveLeavesKingInCheck(
-        uint8 fromX,
-        uint8 fromY,
-        uint8 toX,
-        uint8 toY
-    ) internal returns (bool) {
+    function moveLeavesKingInCheck(Player player, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY)
+        internal
+        returns (bool)
+    {
         // Create a temporary board to test the move
         Piece[8][8] memory tempBoard;
         for (uint8 x = 0; x < 8; x++) {
@@ -346,10 +281,7 @@ contract ChessGame {
         uint8 kingY;
         for (uint8 x = 0; x < 8; x++) {
             for (uint8 y = 0; y < 8; y++) {
-                if (
-                    tempBoard[x][y].player == currentPlayer &&
-                    tempBoard[x][y].pieceType == PieceType.King
-                ) {
+                if (tempBoard[x][y].player == player && tempBoard[x][y].pieceType == PieceType.King) {
                     kingX = x;
                     kingY = y;
                 }
@@ -357,13 +289,11 @@ contract ChessGame {
         }
 
         // Check if any of the opponent's pieces can capture the king
+        Player opponentPlayer = player == Player.White ? Player.Black : Player.White;
         for (uint8 x = 0; x < 8; x++) {
             for (uint8 y = 0; y < 8; y++) {
-                if (
-                    tempBoard[x][y].player != currentPlayer &&
-                    tempBoard[x][y].player != Player.None
-                ) {
-                    if (validMove(tempBoard[x][y], x, y, kingX, kingY)) {
+                if (tempBoard[x][y].player == opponentPlayer) {
+                    if (validMoveForPiece(opponentPlayer, tempBoard[x][y], x, y, kingX, kingY)) {
                         return true;
                     }
                 }
@@ -373,26 +303,15 @@ contract ChessGame {
         return false;
     }
 
-    function applyMove(
-        uint8 fromX,
-        uint8 fromY,
-        uint8 toX,
-        uint8 toY,
-        PieceType promotionPiece
-    ) internal {
+    function applyMove(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY, PieceType promotionPiece) internal {
         Piece memory piece = board[fromX][fromY];
 
         // Check for pawn promotion
         if (piece.pieceType == PieceType.Pawn) {
-            if (
-                (piece.player == Player.White && toY == 7) ||
-                (piece.player == Player.Black && toY == 0)
-            ) {
+            if ((piece.player == Player.White && toY == 7) || (piece.player == Player.Black && toY == 0)) {
                 require(
-                    promotionPiece == PieceType.Queen ||
-                        promotionPiece == PieceType.Rook ||
-                        promotionPiece == PieceType.Bishop ||
-                        promotionPiece == PieceType.Knight,
+                    promotionPiece == PieceType.Queen || promotionPiece == PieceType.Rook
+                        || promotionPiece == PieceType.Bishop || promotionPiece == PieceType.Knight,
                     "Invalid promotion piece"
                 );
                 piece.pieceType = promotionPiece;
@@ -405,7 +324,8 @@ contract ChessGame {
         emit Move(msg.sender, fromX, fromY, toX, toY);
     }
 
-    function isGameOver(Player targetPlayer) internal returns (bool) {
+    /// @dev Check if it's a game over for the given player
+    function isGameOver(Player forPlayer) internal returns (bool) {
         bool kingInCheck = false;
         uint8 kingX;
         uint8 kingY;
@@ -413,10 +333,7 @@ contract ChessGame {
         // Find the king's position for the current player
         for (uint8 x = 0; x < 8; x++) {
             for (uint8 y = 0; y < 8; y++) {
-                if (
-                    board[x][y].player == targetPlayer &&
-                    board[x][y].pieceType == PieceType.King
-                ) {
+                if (board[x][y].player == forPlayer && board[x][y].pieceType == PieceType.King) {
                     kingX = x;
                     kingY = y;
                     break;
@@ -424,11 +341,14 @@ contract ChessGame {
             }
         }
 
+        // Get the opponent player for move validation
+        Player oppponentPlayer = forPlayer == Player.White ? Player.Black : Player.White;
+
         // Check if the king is in check
         for (uint8 x = 0; x < 8; x++) {
             for (uint8 y = 0; y < 8; y++) {
                 if (board[x][y].player == currentPlayer) {
-                    if (validMove(board[x][y], x, y, kingX, kingY)) {
+                    if (validMove(oppponentPlayer, board[x][y], x, y, kingX, kingY)) {
                         kingInCheck = true;
                         break;
                     }
@@ -437,17 +357,17 @@ contract ChessGame {
         }
 
         if (!kingInCheck) {
-            return false;
+            // Check for a draw
+            return isDraw(forPlayer);
         }
 
         // Check if there are any legal moves left for the current player
         for (uint8 x = 0; x < 8; x++) {
             for (uint8 y = 0; y < 8; y++) {
-                if (board[x][y].player == targetPlayer) {
+                if (board[x][y].player == forPlayer) {
                     for (uint8 newX = 0; newX < 8; newX++) {
                         for (uint8 newY = 0; newY < 8; newY++) {
-                            // TODO : Should check valid move for the given player
-                            if (validMove(board[x][y], x, y, newX, newY)) {
+                            if (validMove(forPlayer, board[x][y], x, y, newX, newY)) {
                                 return false;
                             }
                         }
@@ -460,55 +380,15 @@ contract ChessGame {
         return true;
     }
 
-    function isDraw() internal returns (bool) {
-        bool kingInCheck = false;
-        uint8 kingX;
-        uint8 kingY;
-
-        // Find the king's position for the current player
-        for (uint8 x = 0; x < 8; x++) {
-            for (uint8 y = 0; y < 8; y++) {
-                if (
-                    board[x][y].player == currentPlayer &&
-                    board[x][y].pieceType == PieceType.King
-                ) {
-                    kingX = x;
-                    kingY = y;
-                    break;
-                }
-            }
-        }
-
-        // Check if the king is in check
-        for (uint8 x = 0; x < 8; x++) {
-            for (uint8 y = 0; y < 8; y++) {
-                if (
-                    board[x][y].player != currentPlayer &&
-                    board[x][y].player != Player.None
-                ) {
-                    if (validMove(board[x][y], x, y, kingX, kingY)) {
-                        kingInCheck = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        // If the king is in check, it cannot be a draw
-        if (kingInCheck) {
-            return false;
-        }
-
+    function isDraw(Player forPlayer) internal returns (bool) {
         // Check if there are any legal moves left for the current player
-        bool hasLegalMoves = false;
         for (uint8 x = 0; x < 8; x++) {
             for (uint8 y = 0; y < 8; y++) {
                 if (board[x][y].player == currentPlayer) {
                     for (uint8 newX = 0; newX < 8; newX++) {
                         for (uint8 newY = 0; newY < 8; newY++) {
-                            if (validMove(board[x][y], x, y, newX, newY)) {
-                                hasLegalMoves = true;
-                                break;
+                            if (validMove(forPlayer, board[x][y], x, y, newX, newY)) {
+                                return false;
                             }
                         }
                     }
@@ -516,17 +396,8 @@ contract ChessGame {
             }
         }
 
-        // If the player has legal moves, it cannot be a draw
-        if (hasLegalMoves) {
-            return false;
-        }
-
-        // Stalemate: No legal moves available but the king is not in check
-        if (!kingInCheck) {
-            return true;
-        }
-
-        // ... (same code as before)
+        // If we reached here, no legal move for the given player
+        return true;
     }
 
     function getSenderForPlayer(Player player) internal view returns (address) {
