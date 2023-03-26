@@ -1,1 +1,4 @@
-ChessGpt4Test:test_pawnMove() (gas: 266518868)
+ChessGpt4Test:test_enPassantMate() (gas: 31419860)
+ChessGpt4Test:test_foolsMate() (gas: 177526823)
+ChessGpt4Test:test_pawnCapture() (gas: 29647345)
+ChessGpt4Test:test_scholarsMate() (gas: 223461123)
