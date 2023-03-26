@@ -6,12 +6,12 @@ import {Test} from "forge-std/Test.sol";
 
 /*
 Initial gas report
-| src/ChessGpt4.sol:ChessGame contract |                 |         |         |         |         |
-|--------------------------------------|-----------------|---------|---------|---------|---------|
-| Deployment Cost                      | Deployment Size |         |         |         |         |
-| 2214988                              | 8634            |         |         |         |         |
-| Function Name                        | min             | avg     | median  | max     | # calls |
-| move                                 | 2367958         | 2536847 | 2378563 | 3359366 | 7       |
+| src/ChessGpt4.sol:ChessGame contract |                 |          |         |           |         |
+|--------------------------------------|-----------------|----------|---------|-----------|---------|
+| Deployment Cost                      | Deployment Size |          |         |           |         |
+| 2244415                              | 8781            |          |         |           |         |
+| Function Name                        | min             | avg      | median  | max       | # calls |
+| move                                 | 6562627         | 38071369 | 9163587 | 206254350 | 7       |
  */
 
 /// @dev Test our chess game gpt4 contract
@@ -40,7 +40,7 @@ contract ChessGpt4Test is Test {
         chessGame.move(1, 4, 3, 4, ChessGame.PieceType.Queen);
         // Black pawn to e5
         vm.prank(black);
-        chessGame.move(6, 4, 5, 4, ChessGame.PieceType.Queen);
+        chessGame.move(6, 4, 4, 4, ChessGame.PieceType.Queen);
         // White queen to h4
         vm.prank(white);
         chessGame.move(0, 3, 4, 7, ChessGame.PieceType.Queen);
@@ -50,7 +50,7 @@ contract ChessGpt4Test is Test {
         chessGame.move(7, 6, 5, 5, ChessGame.PieceType.Queen);
         // White bishop to b4
         vm.prank(white);
-        chessGame.move(0, 5, 1, 4, ChessGame.PieceType.Queen);
+        chessGame.move(0, 5, 3, 2, ChessGame.PieceType.Queen);
         // Black pawn to d6
         vm.prank(black);
         chessGame.move(6, 3, 5, 3, ChessGame.PieceType.Queen);
