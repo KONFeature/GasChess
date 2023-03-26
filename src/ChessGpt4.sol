@@ -81,11 +81,11 @@ contract ChessGame {
         currentPlayer = targetPlayer;
 
         // Check if that's a game over for the given player
-        /*if (isGameOver(targetPlayer)) {
+        if (isGameOver(targetPlayer)) {
             gameEnded = true;
             emit GameOver(targetPlayer);
             return;
-        }*/
+        }
     }
 
     function validPlayer(uint8 x, uint8 y) internal view returns (bool) {
@@ -150,10 +150,10 @@ contract ChessGame {
         returns (bool)
     {
         // Ensure the value are right, we need position direction for the given player
-        if (player == Player.White) {
-            require(fromX < toX, "Invalid pawn move.");
-        } else {
-            require(fromX > toX, "Invalid pawn move.");
+        if (player == Player.White && fromX > toX) {
+            return false;
+        } else if (player == Player.Black && fromX < toX) {
+            return false;
         }
         // Get distance
         uint8 distanceX = fromX > toX ? fromX - toX : toX - fromX;
@@ -347,7 +347,7 @@ contract ChessGame {
         // Check if the king is in check
         for (uint8 x = 0; x < 8; x++) {
             for (uint8 y = 0; y < 8; y++) {
-                if (board[x][y].player == currentPlayer) {
+                if (board[x][y].player == oppponentPlayer) {
                     if (validMove(oppponentPlayer, board[x][y], x, y, kingX, kingY)) {
                         kingInCheck = true;
                         break;
