@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GNU GPLv3
 pragma solidity 0.8.19;
 
-/// @dev v1 of the contract, remove usage of signed integers
+/// @dev v0 of the contract, original implementation of gpt4 with a few fixes
 contract ChessGame {
     enum PieceType {
         Empty,
@@ -156,7 +156,6 @@ contract ChessGame {
         } else if (player == Player.Black && fromX < toX) {
             return false;
         }
-
         // Get distance
         uint8 distanceX = fromX > toX ? fromX - toX : toX - fromX;
 
@@ -169,16 +168,13 @@ contract ChessGame {
             if (((player == Player.White && fromX == 1) || (player == Player.Black && fromX == 6)) && distanceX == 2) {
                 return true;
             }
-        } else {
-            uint8 yDiff = fromY > toY ? fromY - toY : toY - fromY;
-            if (yDiff == 1 && distanceX == 1) {
-                // Check for capture
-                if (board[toX][toY].player != Player.None) {
-                    return true;
-                }
-                if (isEnPassantCapture(player, fromX, fromY, toX, toY)) {
-                    return true;
-                }
+        } else if (abs(int8(toY) - int8(fromY)) == 1 && distanceX == 1) {
+            // Check for capture
+            if (board[toX][toY].player != Player.None) {
+                return true;
+            }
+            if (isEnPassantCapture(player, fromX, fromY, toX, toY)) {
+                return true;
             }
         }
 
@@ -191,8 +187,7 @@ contract ChessGame {
         returns (bool)
     {
         if ((player == Player.White && fromX == 4) || (player == Player.Black && fromX == 3)) {
-            uint8 targetY = player == Player.White ? toY - 1 : toY + 1;
-            if (lastMove[0] == toX && lastMove[1] == targetY) {
+            if (lastMove[0] == toX && lastMove[1] == uint8(int8(toY) - (player == Player.White ? int8(1) : int8(-1)))) {
                 Piece memory capturedPawn = board[toX][fromX];
                 return capturedPawn.pieceType == PieceType.Pawn && capturedPawn.player != player;
             }
@@ -201,34 +196,25 @@ contract ChessGame {
     }
 
     function validRookMove(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal view returns (bool) {
-        // If same column exit
         if (fromX != toX && fromY != toY) {
             return false;
-        } else if (fromX != toX) {
-            // x column movment check
-            uint8 x = fromX;
-            while (x <= toX) {
-                x = fromX > toX ? x - 1 : x + 1;
+        }
 
-                if (x == toX) {
-                    return true;
-                }
-                if (board[x][fromY].player != Player.None) {
-                    return false;
-                }
+        int8 xDirection = (fromX < toX) ? int8(1) : int8(-1);
+        int8 yDirection = (fromY < toY) ? int8(1) : int8(-1);
+
+        uint8 x = fromX;
+        uint8 y = fromY;
+
+        while (x != toX || y != toY) {
+            x = (x != toX) ? uint8(int8(x) + xDirection) : x;
+            y = (y != toY) ? uint8(int8(y) + yDirection) : y;
+
+            if (x == toX && y == toY) {
+                return true;
             }
-        } else if (fromY != toY) {
-            // y column movment check
-            uint8 y = fromY;
-
-            while (y <= toY) {
-                y = fromY > toY ? y - 1 : y + 1;
-                if (y == toY) {
-                    return true;
-                }
-                if (board[fromX][y].player != Player.None) {
-                    return false;
-                }
+            if (board[x][y].player != Player.None) {
+                return false;
             }
         }
 
@@ -236,35 +222,32 @@ contract ChessGame {
     }
 
     function validBishopMove(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal view returns (bool) {
-        uint8 distanceX = fromX > toX ? fromX - toX : toX - fromX;
-        uint8 distanceY = fromY > toY ? fromY - toY : toY - fromY;
-
-        if (distanceX != distanceY) {
+        if (abs(int8(toX) - int8(fromX)) != abs(int8(toY) - int8(fromY))) {
             return false;
         }
 
-        bool xIncreasing = fromX < toX;
-        bool yIncreasing = fromY < toY;
+        int8 xDirection = (fromX < toX) ? int8(1) : int8(-1);
+        int8 yDirection = (fromY < toY) ? int8(1) : int8(-1);
 
-        uint8 x = xIncreasing ? fromX + 1 : fromX - 1;
-        uint8 y = yIncreasing ? fromY + 1 : fromY - 1;
+        int8 x = int8(fromX) + xDirection;
+        int8 y = int8(fromY) + yDirection;
 
-        while (x != toX && y != toY) {
-            if (board[x][y].player != Player.None) {
+        while (x != int8(toX) && y != int8(toY)) {
+            if (board[uint8(x)][uint8(y)].player != Player.None) {
                 return false;
             }
-            x = xIncreasing ? x + 1 : x - 1;
-            y = yIncreasing ? y + 1 : y - 1;
+            x += xDirection;
+            y += yDirection;
         }
 
         return true;
     }
 
     function validKnightMove(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal pure returns (bool) {
-        uint8 xDiff = fromX > toX ? fromX - toX : toX - fromX;
-        uint8 yDiff = fromY > toY ? fromY - toY : toY - fromY;
+        int8 xDiff = int8(toX) - int8(fromX);
+        int8 yDiff = int8(toY) - int8(fromY);
 
-        return (xDiff == 2 && yDiff == 1) || (xDiff == 1 && yDiff == 2);
+        return (abs(xDiff) == 2 && abs(yDiff) == 1) || (abs(xDiff) == 1 && abs(yDiff) == 2);
     }
 
     function validQueenMove(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal view returns (bool) {
@@ -425,5 +408,9 @@ contract ChessGame {
         } else if (player == Player.Black) {
             return blackPlayer;
         }
+    }
+
+    function abs(int256 x) private pure returns (int256) {
+        return x >= 0 ? x : -x;
     }
 }

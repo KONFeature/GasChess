@@ -12,6 +12,18 @@ Initial gas report
 | 2244415                              | 8781            |          |         |           |         |
 | Function Name                        | min             | avg      | median  | max       | # calls |
 | move                                 | 6562627         | 38071369 | 9163587 | 206254350 | 7       |
+
+
+=== Inital impl ===
+v0 report : 
+| move                                 | 6562627         | 38071369 | 9163587 | 206254350 | 7       |
+ChessGpt4Test:test_pawnMove() (gas: 266518868)
+
+=== Remove signed integer usage ===
+v1 report :
+| move                                 | 6510125         | 31916842 | 9068113 | 163719064 | 7       |
+ChessGpt4Test:test_pawnMove() (gas: 223437181)
+
  */
 
 /// @dev Test our chess game gpt4 contract
