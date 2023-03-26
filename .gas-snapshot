@@ -1,4 +1,4 @@
-ChessGpt4Test:test_enPassantMate() (gas: 31419860)
-ChessGpt4Test:test_foolsMate() (gas: 177526823)
-ChessGpt4Test:test_pawnCapture() (gas: 29647345)
-ChessGpt4Test:test_scholarsMate() (gas: 223461123)
+ChessGpt4Test:test_enPassantMate() (gas: 27058772)
+ChessGpt4Test:test_foolsMate() (gas: 164719407)
+ChessGpt4Test:test_pawnCapture() (gas: 25530125)
+ChessGpt4Test:test_scholarsMate() (gas: 204577179)

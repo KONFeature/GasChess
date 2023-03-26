@@ -50,8 +50,11 @@ contract ChessGame {
         board[0][4] = Piece(PieceType.King, Player.White);
 
         // Set up white pawns
-        for (uint8 i = 0; i < 8; i++) {
+        for (uint8 i = 0; i < 8;) {
             board[1][i] = Piece(PieceType.Pawn, Player.White);
+            unchecked {
+                ++i;
+            }
         }
 
         // Set up black pieces
@@ -62,8 +65,11 @@ contract ChessGame {
         board[7][4] = Piece(PieceType.King, Player.Black);
 
         // Set up black pawns
-        for (uint8 i = 0; i < 8; i++) {
+        for (uint8 i = 0; i < 8;) {
             board[6][i] = Piece(PieceType.Pawn, Player.Black);
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -283,9 +289,15 @@ contract ChessGame {
     {
         // Create a temporary board to test the move
         Piece[8][8] memory tempBoard;
-        for (uint8 x = 0; x < 8; x++) {
-            for (uint8 y = 0; y < 8; y++) {
+        for (uint8 x = 0; x < 8;) {
+            for (uint8 y = 0; y < 8;) {
                 tempBoard[x][y] = board[x][y];
+                unchecked {
+                    ++y;
+                }
+            }
+            unchecked {
+                ++x;
             }
         }
 
@@ -296,24 +308,36 @@ contract ChessGame {
         // Find the king's position for the current player
         uint8 kingX;
         uint8 kingY;
-        for (uint8 x = 0; x < 8; x++) {
-            for (uint8 y = 0; y < 8; y++) {
+        for (uint8 x = 0; x < 8;) {
+            for (uint8 y = 0; y < 8;) {
                 if (tempBoard[x][y].player == player && tempBoard[x][y].pieceType == PieceType.King) {
                     kingX = x;
                     kingY = y;
                 }
+                unchecked {
+                    ++y;
+                }
+            }
+            unchecked {
+                ++x;
             }
         }
 
         // Check if any of the opponent's pieces can capture the king
         Player opponentPlayer = player == Player.White ? Player.Black : Player.White;
-        for (uint8 x = 0; x < 8; x++) {
-            for (uint8 y = 0; y < 8; y++) {
+        for (uint8 x = 0; x < 8;) {
+            for (uint8 y = 0; y < 8;) {
                 if (tempBoard[x][y].player == opponentPlayer) {
                     if (validMoveForPiece(opponentPlayer, tempBoard[x][y], x, y, kingX, kingY)) {
                         return true;
                     }
                 }
+                unchecked {
+                    ++y;
+                }
+            }
+            unchecked {
+                ++x;
             }
         }
 
@@ -353,13 +377,19 @@ contract ChessGame {
         uint8 kingY;
 
         // Find the king's position for the current player
-        for (uint8 x = 0; x < 8; x++) {
-            for (uint8 y = 0; y < 8; y++) {
+        for (uint8 x = 0; x < 8;) {
+            for (uint8 y = 0; y < 8;) {
                 if (board[x][y].player == forPlayer && board[x][y].pieceType == PieceType.King) {
                     kingX = x;
                     kingY = y;
                     break;
                 }
+                unchecked {
+                    ++y;
+                }
+            }
+            unchecked {
+                ++x;
             }
         }
 
@@ -367,14 +397,20 @@ contract ChessGame {
         Player oppponentPlayer = forPlayer == Player.White ? Player.Black : Player.White;
 
         // Check if the king is in check
-        for (uint8 x = 0; x < 8; x++) {
-            for (uint8 y = 0; y < 8; y++) {
+        for (uint8 x = 0; x < 8;) {
+            for (uint8 y = 0; y < 8;) {
                 if (board[x][y].player == oppponentPlayer) {
                     if (validMove(oppponentPlayer, board[x][y], x, y, kingX, kingY)) {
                         kingInCheck = true;
                         break;
                     }
                 }
+                unchecked {
+                    ++y;
+                }
+            }
+            unchecked {
+                ++x;
             }
         }
 
@@ -384,17 +420,29 @@ contract ChessGame {
         }
 
         // Check if there are any legal moves left for the current player
-        for (uint8 x = 0; x < 8; x++) {
-            for (uint8 y = 0; y < 8; y++) {
+        for (uint8 x = 0; x < 8;) {
+            for (uint8 y = 0; y < 8;) {
                 if (board[x][y].player == forPlayer) {
-                    for (uint8 newX = 0; newX < 8; newX++) {
-                        for (uint8 newY = 0; newY < 8; newY++) {
+                    for (uint8 newX = 0; newX < 8;) {
+                        for (uint8 newY = 0; newY < 8;) {
                             if (validMove(forPlayer, board[x][y], x, y, newX, newY)) {
                                 return false;
                             }
+                            unchecked {
+                                ++newY;
+                            }
+                        }
+                        unchecked {
+                            ++newX;
                         }
                     }
                 }
+                unchecked {
+                    ++y;
+                }
+            }
+            unchecked {
+                ++x;
             }
         }
 
@@ -404,17 +452,29 @@ contract ChessGame {
 
     function isDraw(Player forPlayer) internal returns (bool) {
         // Check if there are any legal moves left for the current player
-        for (uint8 x = 0; x < 8; x++) {
-            for (uint8 y = 0; y < 8; y++) {
+        for (uint8 x = 0; x < 8;) {
+            for (uint8 y = 0; y < 8;) {
                 if (board[x][y].player == currentPlayer) {
-                    for (uint8 newX = 0; newX < 8; newX++) {
-                        for (uint8 newY = 0; newY < 8; newY++) {
+                    for (uint8 newX = 0; newX < 8;) {
+                        for (uint8 newY = 0; newY < 8;) {
                             if (validMove(forPlayer, board[x][y], x, y, newX, newY)) {
                                 return false;
                             }
+                            unchecked {
+                                ++newY;
+                            }
+                        }
+                        unchecked {
+                            ++newX;
                         }
                     }
                 }
+                unchecked {
+                    ++y;
+                }
+            }
+            unchecked {
+                ++x;
             }
         }
 
