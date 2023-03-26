@@ -21,8 +21,11 @@ ChessGpt4Test:test_pawnMove() (gas: 266518868)
 
 === Remove signed integer usage ===
 v1 report :
-| move                                 | 6510125         | 31916842 | 9068113 | 163719064 | 7       |
-ChessGpt4Test:test_pawnMove() (gas: 223437181)
+| move                                 | 3581063         | 23099337 | 8736953 | 163719332 | 20      |
+ChessGpt4Test:test_enPassantMate() (gas: 31419860)
+ChessGpt4Test:test_foolsMate() (gas: 177526823)
+ChessGpt4Test:test_pawnCapture() (gas: 29647345)
+ChessGpt4Test:test_scholarsMate() (gas: 223461123) -> Was test_pawnMove
 
  */
 

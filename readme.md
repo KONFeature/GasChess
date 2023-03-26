@@ -40,14 +40,16 @@ graph TD
 ```
 
 ## To-Do List
-- [ ] Features
-  - [ ] Implement comprehensive draw logic
-  - [ ] Analyze counter-movement pieces for game over conditions
+- [x] Features
+  - [x] Basic chess logic
+  - [x] En passant capture
+  - [x] Implement draw logic
+  - [x] Analyze counter-movement pieces for game over conditions
 - [ ] Logic
   - [ ] Optimize gameOver and draw checks to trigger only when in check
 - [ ] Gas Improvements:
+  - [x] Avoid using signed integers (int8)
   - [ ] Replace uint8 with uint256 for better gas efficiency
-  - [ ] Avoid using signed integers (int8)
   - [ ] Optimize loops for efficiency, including assembly where appropriate
   - [ ] Utilize assembly and error codes for error handling, instead of strings
   - [ ] Implement event handling via assembly
