@@ -299,18 +299,16 @@ contract ChessGame {
 
         // Check if any of the opponent's pieces can capture the king
         Player opponentPlayer = player == Player.White ? Player.Black : Player.White;
-        for (uint8 x = 0; x < 8;) {
-            for (uint8 y = 0; y < 8;) {
-                if (tempBoard[x][y].player == opponentPlayer) {
-                    if (validMoveForPiece(opponentPlayer, tempBoard[x][y], x, y, kingX, kingY)) {
-                        return true;
+        unchecked {
+            for (uint8 x = 0; x < 8;) {
+                for (uint8 y = 0; y < 8;) {
+                    if (tempBoard[x][y].player == opponentPlayer) {
+                        if (validMoveForPiece(opponentPlayer, tempBoard[x][y], x, y, kingX, kingY)) {
+                            return true;
+                        }
                     }
-                }
-                unchecked {
                     ++y;
                 }
-            }
-            unchecked {
                 ++x;
             }
         }
@@ -354,19 +352,19 @@ contract ChessGame {
         Player oppponentPlayer = forPlayer == Player.White ? Player.Black : Player.White;
 
         // Check if the king is in check
-        for (uint8 x = 0; x < 8;) {
-            for (uint8 y = 0; y < 8;) {
-                if (board[x][y].player == oppponentPlayer) {
-                    if (validMove(oppponentPlayer, board[x][y], x, y, kingX, kingY)) {
-                        kingInCheck = true;
-                        break;
+        unchecked {
+            for (uint8 x = 0; x < 8;) {
+                for (uint8 y = 0; y < 8;) {
+                    if (board[x][y].player == oppponentPlayer) {
+                        if (validMove(oppponentPlayer, board[x][y], x, y, kingX, kingY)) {
+                            kingInCheck = true;
+                            break;
+                        }
                     }
-                }
-                unchecked {
                     ++y;
                 }
-            }
-            unchecked {
+                // Directly jump this iteration if we found a king in check position
+                if (kingInCheck) break;
                 ++x;
             }
         }
@@ -377,28 +375,22 @@ contract ChessGame {
         }
 
         // Check if there are any legal moves left for the current player
-        for (uint8 x = 0; x < 8;) {
-            for (uint8 y = 0; y < 8;) {
-                if (board[x][y].player == forPlayer) {
-                    for (uint8 newX = 0; newX < 8;) {
-                        for (uint8 newY = 0; newY < 8;) {
-                            if (validMove(forPlayer, board[x][y], x, y, newX, newY)) {
-                                return false;
-                            }
-                            unchecked {
+        unchecked {
+            for (uint8 x = 0; x < 8;) {
+                for (uint8 y = 0; y < 8;) {
+                    if (board[x][y].player == forPlayer) {
+                        for (uint8 newX = 0; newX < 8;) {
+                            for (uint8 newY = 0; newY < 8;) {
+                                if (validMove(forPlayer, board[x][y], x, y, newX, newY)) {
+                                    return false;
+                                }
                                 ++newY;
                             }
-                        }
-                        unchecked {
                             ++newX;
                         }
                     }
-                }
-                unchecked {
                     ++y;
                 }
-            }
-            unchecked {
                 ++x;
             }
         }
@@ -409,28 +401,22 @@ contract ChessGame {
 
     function isDraw(Player forPlayer) internal returns (bool) {
         // Check if there are any legal moves left for the current player
-        for (uint8 x = 0; x < 8;) {
-            for (uint8 y = 0; y < 8;) {
-                if (board[x][y].player == currentPlayer) {
-                    for (uint8 newX = 0; newX < 8;) {
-                        for (uint8 newY = 0; newY < 8;) {
-                            if (validMove(forPlayer, board[x][y], x, y, newX, newY)) {
-                                return false;
-                            }
-                            unchecked {
+        unchecked {
+            for (uint8 x = 0; x < 8;) {
+                for (uint8 y = 0; y < 8;) {
+                    if (board[x][y].player == currentPlayer) {
+                        for (uint8 newX = 0; newX < 8;) {
+                            for (uint8 newY = 0; newY < 8;) {
+                                if (validMove(forPlayer, board[x][y], x, y, newX, newY)) {
+                                    return false;
+                                }
                                 ++newY;
                             }
-                        }
-                        unchecked {
                             ++newX;
                         }
                     }
-                }
-                unchecked {
                     ++y;
                 }
-            }
-            unchecked {
                 ++x;
             }
         }
@@ -455,35 +441,36 @@ contract ChessGame {
     /// @dev Find the king position in the given `_board`for the given `_player`
     /// @return x The king's `x`  position
     /// @return y The king's `y` position
-    function _findKingPositionOnBoard(Piece[8][8] memory _board, Player _player) internal pure returns (uint8 x, uint8 y) {
-        for (x = 0; x < 8;) {
-            for (y = 0; y < 8;) {
-                if (_board[x][y].player == _player && _board[x][y].pieceType == PieceType.King) {
-                    return (x, y);
-                }
-                unchecked {
+    function _findKingPositionOnBoard(Piece[8][8] memory _board, Player _player)
+        internal
+        pure
+        returns (uint8 x, uint8 y)
+    {
+        unchecked {
+            for (x = 0; x < 8;) {
+                for (y = 0; y < 8;) {
+                    if (_board[x][y].player == _player && _board[x][y].pieceType == PieceType.King) {
+                        return (x, y);
+                    }
                     ++y;
                 }
-            }
-            unchecked {
                 ++x;
             }
         }
     }
+
     /// @dev Find the king position in the given `_board`for the given `_player`
     /// @return x The king's `x`  position
     /// @return y The king's `y` position
     function _findKingPosition(Player _player) internal view returns (uint8 x, uint8 y) {
-        for (x = 0; x < 8;) {
-            for (y = 0; y < 8;) {
-                if (board[x][y].player == _player && board[x][y].pieceType == PieceType.King) {
-                    return (x, y);
-                }
-                unchecked {
+        unchecked {
+            for (x = 0; x < 8;) {
+                for (y = 0; y < 8;) {
+                    if (board[x][y].player == _player && board[x][y].pieceType == PieceType.King) {
+                        return (x, y);
+                    }
                     ++y;
                 }
-            }
-            unchecked {
                 ++x;
             }
         }
