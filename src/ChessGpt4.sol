@@ -288,40 +288,14 @@ contract ChessGame {
         returns (bool)
     {
         // Create a temporary board to test the move
-        Piece[8][8] memory tempBoard;
-        for (uint8 x = 0; x < 8;) {
-            for (uint8 y = 0; y < 8;) {
-                tempBoard[x][y] = board[x][y];
-                unchecked {
-                    ++y;
-                }
-            }
-            unchecked {
-                ++x;
-            }
-        }
+        Piece[8][8] memory tempBoard = board;
 
         // Apply the move on the temporary board
         tempBoard[toX][toY] = tempBoard[fromX][fromY];
         tempBoard[fromX][fromY] = Piece(PieceType.Empty, Player.None);
 
         // Find the king's position for the current player
-        uint8 kingX;
-        uint8 kingY;
-        for (uint8 x = 0; x < 8;) {
-            for (uint8 y = 0; y < 8;) {
-                if (tempBoard[x][y].player == player && tempBoard[x][y].pieceType == PieceType.King) {
-                    kingX = x;
-                    kingY = y;
-                }
-                unchecked {
-                    ++y;
-                }
-            }
-            unchecked {
-                ++x;
-            }
-        }
+        (uint8 kingX, uint8 kingY) = _findKingPositionOnBoard(tempBoard, player);
 
         // Check if any of the opponent's pieces can capture the king
         Player opponentPlayer = player == Player.White ? Player.Black : Player.White;
@@ -373,25 +347,8 @@ contract ChessGame {
     /// @dev Check if it's a game over for the given player
     function isGameOver(Player forPlayer) internal returns (bool) {
         bool kingInCheck = false;
-        uint8 kingX;
-        uint8 kingY;
-
         // Find the king's position for the current player
-        for (uint8 x = 0; x < 8;) {
-            for (uint8 y = 0; y < 8;) {
-                if (board[x][y].player == forPlayer && board[x][y].pieceType == PieceType.King) {
-                    kingX = x;
-                    kingY = y;
-                    break;
-                }
-                unchecked {
-                    ++y;
-                }
-            }
-            unchecked {
-                ++x;
-            }
-        }
+        (uint8 kingX, uint8 kingY) = _findKingPosition(forPlayer);
 
         // Get the opponent player for move validation
         Player oppponentPlayer = forPlayer == Player.White ? Player.Black : Player.White;
@@ -488,6 +445,47 @@ contract ChessGame {
             return whitePlayer;
         } else if (player == Player.Black) {
             return blackPlayer;
+        }
+    }
+
+    /* -------------------------------------------------------------------------- */
+    /*                       Internal pure helper function's                      */
+    /* -------------------------------------------------------------------------- */
+
+    /// @dev Find the king position in the given `_board`for the given `_player`
+    /// @return x The king's `x`  position
+    /// @return y The king's `y` position
+    function _findKingPositionOnBoard(Piece[8][8] memory _board, Player _player) internal pure returns (uint8 x, uint8 y) {
+        for (x = 0; x < 8;) {
+            for (y = 0; y < 8;) {
+                if (_board[x][y].player == _player && _board[x][y].pieceType == PieceType.King) {
+                    return (x, y);
+                }
+                unchecked {
+                    ++y;
+                }
+            }
+            unchecked {
+                ++x;
+            }
+        }
+    }
+    /// @dev Find the king position in the given `_board`for the given `_player`
+    /// @return x The king's `x`  position
+    /// @return y The king's `y` position
+    function _findKingPosition(Player _player) internal view returns (uint8 x, uint8 y) {
+        for (x = 0; x < 8;) {
+            for (y = 0; y < 8;) {
+                if (board[x][y].player == _player && board[x][y].pieceType == PieceType.King) {
+                    return (x, y);
+                }
+                unchecked {
+                    ++y;
+                }
+            }
+            unchecked {
+                ++x;
+            }
         }
     }
 }
