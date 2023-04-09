@@ -26,7 +26,7 @@ contract ChessGame {
     address public whitePlayer;
     address public blackPlayer;
 
-    Piece[8][8] board;
+    Piece[64] board;
 
     // The last move on X and Y axis
     uint8[2] lastMove;
@@ -43,27 +43,33 @@ contract ChessGame {
 
         // Initialize the board with the starting positions
         // Set up white pieces
-        board[0][0] = board[0][7] = Piece(PieceType.Rook, Player.White);
-        board[0][1] = board[0][6] = Piece(PieceType.Knight, Player.White);
-        board[0][2] = board[0][5] = Piece(PieceType.Bishop, Player.White);
-        board[0][3] = Piece(PieceType.Queen, Player.White);
-        board[0][4] = Piece(PieceType.King, Player.White);
+        board[index(0, 0)] = board[index(0, 7)] = Piece(PieceType.Rook, Player.White);
+        board[index(0, 1)] = board[index(0, 6)] = Piece(PieceType.Knight, Player.White);
+        board[index(0, 2)] = board[index(0, 5)] = Piece(PieceType.Bishop, Player.White);
+        board[index(0, 3)] = Piece(PieceType.Queen, Player.White);
+        board[index(0, 4)] = Piece(PieceType.King, Player.White);
 
         // Set up white pawns
-        for (uint8 i = 0; i < 8; i++) {
-            board[1][i] = Piece(PieceType.Pawn, Player.White);
+        for (uint8 i; i < 8;) {
+            board[index(1, i)] = Piece(PieceType.Pawn, Player.White);
+            unchecked {
+                ++i;
+            }
         }
 
         // Set up black pieces
-        board[7][0] = board[7][7] = Piece(PieceType.Rook, Player.Black);
-        board[7][1] = board[7][6] = Piece(PieceType.Knight, Player.Black);
-        board[7][2] = board[7][5] = Piece(PieceType.Bishop, Player.Black);
-        board[7][3] = Piece(PieceType.Queen, Player.Black);
-        board[7][4] = Piece(PieceType.King, Player.Black);
+        board[index(7, 0)] = board[index(7, 7)] = Piece(PieceType.Rook, Player.Black);
+        board[index(7, 1)] = board[index(7, 6)] = Piece(PieceType.Knight, Player.Black);
+        board[index(7, 2)] = board[index(7, 5)] = Piece(PieceType.Bishop, Player.Black);
+        board[index(7, 3)] = Piece(PieceType.Queen, Player.Black);
+        board[index(7, 4)] = Piece(PieceType.King, Player.Black);
 
         // Set up black pawns
-        for (uint8 i = 0; i < 8; i++) {
-            board[6][i] = Piece(PieceType.Pawn, Player.Black);
+        for (uint8 i; i < 8;) {
+            board[index(6, i)] = Piece(PieceType.Pawn, Player.Black);
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -71,7 +77,7 @@ contract ChessGame {
         require(!gameEnded, "Game has already ended.");
         require(validPlayer(fromX, fromY), "Invalid player.");
 
-        Piece memory piece = board[fromX][fromY];
+        Piece memory piece = board[index(fromX, fromY)];
         Player _currentPlayer = currentPlayer;
         require(validMove(_currentPlayer, piece, fromX, fromY, toX, toY), "Invalid move.");
 
@@ -90,7 +96,7 @@ contract ChessGame {
     }
 
     function validPlayer(uint8 x, uint8 y) internal view returns (bool) {
-        return msg.sender == getSenderForPlayer(currentPlayer) && board[x][y].player == currentPlayer;
+        return msg.sender == getSenderForPlayer(currentPlayer) && board[index(x, y)].player == currentPlayer;
     }
 
     /// @dev Check if the given move is valid for the given `player` and `piece`
@@ -109,7 +115,7 @@ contract ChessGame {
         }
 
         // Check that the destination square is either empty or occupied by an opponent's piece
-        if (board[toX][toY].player == player) {
+        if (board[index(toX, toY)].player == player) {
             return false;
         }
 
@@ -157,7 +163,7 @@ contract ChessGame {
 
         if (fromY == toY) {
             // Same Y, just 1 distance, ok
-            if (distanceX == 1 && board[toX][toY].player == Player.None) {
+            if (distanceX == 1 && board[index(toX, toY)].player == Player.None) {
                 return true;
             }
             // Same Y, 2 distance from start line
@@ -168,7 +174,7 @@ contract ChessGame {
             uint8 yDiff = fromY > toY ? fromY - toY : toY - fromY;
             if (yDiff == 1 && distanceX == 1) {
                 // Check for capture
-                if (board[toX][toY].player != Player.None) {
+                if (board[index(toX, toY)].player != Player.None) {
                     return true;
                 }
                 if (isEnPassantCapture(player, fromX, fromY, toX, toY)) {
@@ -187,11 +193,11 @@ contract ChessGame {
         if ((player == Player.White && fromX == 4) || (player == Player.Black && fromX == 3)) {
             uint8 targetX = player == Player.White ? toX - 1 : toX + 1;
             if (lastMove[0] == targetX && lastMove[1] == toY) {
-                Piece memory capturedPawn = board[targetX][toY];
+                Piece memory capturedPawn = board[index(targetX, toY)];
                 bool isEnPassant = capturedPawn.pieceType == PieceType.Pawn && capturedPawn.player != player;
                 // If that's an en passant capture, reset the position
                 if (isEnPassant) {
-                    board[targetX][toY] = Piece(PieceType.Empty, Player.None);
+                    board[index(targetX, toY)] = Piece(PieceType.Empty, Player.None);
                 }
                 return isEnPassant;
             }
@@ -212,7 +218,7 @@ contract ChessGame {
                 if (x == toX) {
                     return true;
                 }
-                if (board[x][fromY].player != Player.None) {
+                if (board[index(x, fromY)].player != Player.None) {
                     return false;
                 }
             }
@@ -225,7 +231,7 @@ contract ChessGame {
                 if (y == toY) {
                     return true;
                 }
-                if (board[fromX][y].player != Player.None) {
+                if (board[index(fromX, y)].player != Player.None) {
                     return false;
                 }
             }
@@ -249,7 +255,7 @@ contract ChessGame {
         uint8 y = yIncreasing ? fromY + 1 : fromY - 1;
 
         while (x != toX && y != toY) {
-            if (board[x][y].player != Player.None) {
+            if (board[index(x, y)].player != Player.None) {
                 return false;
             }
             x = xIncreasing ? x + 1 : x - 1;
@@ -282,38 +288,26 @@ contract ChessGame {
         returns (bool)
     {
         // Create a temporary board to test the move
-        Piece[8][8] memory tempBoard;
-        for (uint8 x = 0; x < 8; x++) {
-            for (uint8 y = 0; y < 8; y++) {
-                tempBoard[x][y] = board[x][y];
-            }
-        }
+        Piece[64] memory tempBoard = board;
 
         // Apply the move on the temporary board
-        tempBoard[toX][toY] = tempBoard[fromX][fromY];
-        tempBoard[fromX][fromY] = Piece(PieceType.Empty, Player.None);
+        tempBoard[index(toX, toY)] = tempBoard[index(fromX, fromY)];
+        tempBoard[index(fromX, fromY)] = Piece(PieceType.Empty, Player.None);
 
         // Find the king's position for the current player
-        uint8 kingX;
-        uint8 kingY;
-        for (uint8 x = 0; x < 8; x++) {
-            for (uint8 y = 0; y < 8; y++) {
-                if (tempBoard[x][y].player == player && tempBoard[x][y].pieceType == PieceType.King) {
-                    kingX = x;
-                    kingY = y;
-                }
-            }
-        }
+        (uint8 kingX, uint8 kingY) = _findKingPositionOnBoard(tempBoard, player);
 
         // Check if any of the opponent's pieces can capture the king
         Player opponentPlayer = player == Player.White ? Player.Black : Player.White;
-        for (uint8 x = 0; x < 8; x++) {
-            for (uint8 y = 0; y < 8; y++) {
-                if (tempBoard[x][y].player == opponentPlayer) {
-                    if (validMoveForPiece(opponentPlayer, tempBoard[x][y], x, y, kingX, kingY)) {
+        unchecked {
+            for (uint256 idx = 0; idx < 64;) {
+                if (tempBoard[idx].player == opponentPlayer) {
+                    (uint8 x, uint8 y) = position(idx);
+                    if (validMoveForPiece(opponentPlayer, tempBoard[idx], x, y, kingX, kingY)) {
                         return true;
                     }
                 }
+                ++idx;
             }
         }
 
@@ -321,7 +315,7 @@ contract ChessGame {
     }
 
     function applyMove(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY, PieceType promotionPiece) internal {
-        Piece memory piece = board[fromX][fromY];
+        Piece memory piece = board[index(fromX, fromY)];
 
         // Check for pawn promotion
         if (piece.pieceType == PieceType.Pawn) {
@@ -336,8 +330,8 @@ contract ChessGame {
         }
 
         // Update the pieces
-        board[toX][toY] = piece;
-        board[fromX][fromY] = Piece(PieceType.Empty, Player.None);
+        board[index(toX, toY)] = piece;
+        board[index(fromX, fromY)] = Piece(PieceType.Empty, Player.None);
 
         // Update the last move
         lastMove[0] = toX;
@@ -349,32 +343,23 @@ contract ChessGame {
     /// @dev Check if it's a game over for the given player
     function isGameOver(Player forPlayer) internal returns (bool) {
         bool kingInCheck = false;
-        uint8 kingX;
-        uint8 kingY;
-
         // Find the king's position for the current player
-        for (uint8 x = 0; x < 8; x++) {
-            for (uint8 y = 0; y < 8; y++) {
-                if (board[x][y].player == forPlayer && board[x][y].pieceType == PieceType.King) {
-                    kingX = x;
-                    kingY = y;
-                    break;
-                }
-            }
-        }
+        (uint8 kingX, uint8 kingY) = _findKingPosition(forPlayer);
 
         // Get the opponent player for move validation
         Player oppponentPlayer = forPlayer == Player.White ? Player.Black : Player.White;
 
         // Check if the king is in check
-        for (uint8 x = 0; x < 8; x++) {
-            for (uint8 y = 0; y < 8; y++) {
-                if (board[x][y].player == oppponentPlayer) {
-                    if (validMove(oppponentPlayer, board[x][y], x, y, kingX, kingY)) {
+        unchecked {
+            for (uint256 idx = 0; idx < 64;) {
+                if (board[idx].player == oppponentPlayer) {
+                    (uint8 x, uint8 y) = position(idx);
+                    if (validMove(oppponentPlayer, board[idx], x, y, kingX, kingY)) {
                         kingInCheck = true;
                         break;
                     }
                 }
+                ++idx;
             }
         }
 
@@ -384,17 +369,19 @@ contract ChessGame {
         }
 
         // Check if there are any legal moves left for the current player
-        for (uint8 x = 0; x < 8; x++) {
-            for (uint8 y = 0; y < 8; y++) {
-                if (board[x][y].player == forPlayer) {
-                    for (uint8 newX = 0; newX < 8; newX++) {
-                        for (uint8 newY = 0; newY < 8; newY++) {
-                            if (validMove(forPlayer, board[x][y], x, y, newX, newY)) {
-                                return false;
-                            }
+        unchecked {
+            for (uint256 idx = 0; idx < 64;) {
+                if (board[idx].player == forPlayer) {
+                    for (uint256 newIdx = 0; newIdx < 64;) {
+                        (uint8 x, uint8 y) = position(idx);
+                        (uint8 newX, uint8 newY) = position(newIdx);
+                        if (validMove(forPlayer, board[idx], x, y, newX, newY)) {
+                            return false;
                         }
+                        ++newIdx;
                     }
                 }
+                ++idx;
             }
         }
 
@@ -404,17 +391,19 @@ contract ChessGame {
 
     function isDraw(Player forPlayer) internal returns (bool) {
         // Check if there are any legal moves left for the current player
-        for (uint8 x = 0; x < 8; x++) {
-            for (uint8 y = 0; y < 8; y++) {
-                if (board[x][y].player == currentPlayer) {
-                    for (uint8 newX = 0; newX < 8; newX++) {
-                        for (uint8 newY = 0; newY < 8; newY++) {
-                            if (validMove(forPlayer, board[x][y], x, y, newX, newY)) {
-                                return false;
-                            }
+        unchecked {
+            for (uint256 idx = 0; idx < 64;) {
+                if (board[idx].player == currentPlayer) {
+                    for (uint256 newIdx = 0; newIdx < 64;) {
+                        (uint8 x, uint8 y) = position(idx);
+                        (uint8 newX, uint8 newY) = position(newIdx);
+                        if (validMove(forPlayer, board[idx], x, y, newX, newY)) {
+                            return false;
                         }
+                        ++newIdx;
                     }
                 }
+                ++idx;
             }
         }
 
@@ -428,6 +417,57 @@ contract ChessGame {
             return whitePlayer;
         } else if (player == Player.Black) {
             return blackPlayer;
+        }
+    }
+
+    /* -------------------------------------------------------------------------- */
+    /*                       Internal pure helper function's                      */
+    /* -------------------------------------------------------------------------- */
+
+    /// @dev Find the king position in the given `_board`for the given `_player`
+    /// @return x The king's `x`  position
+    /// @return y The king's `y` position
+    function _findKingPositionOnBoard(Piece[64] memory _board, Player _player)
+        internal
+        pure
+        returns (uint8 x, uint8 y)
+    {
+        unchecked {
+            for (uint256 idx = 0; idx < 64;) {
+                if (_board[idx].player == _player && _board[idx].pieceType == PieceType.King) {
+                    return position(idx);
+                }
+                ++idx;
+            }
+        }
+    }
+
+    /// @dev Find the king position in the given `_board`for the given `_player`
+    /// @return x The king's `x`  position
+    /// @return y The king's `y` position
+    function _findKingPosition(Player _player) internal view returns (uint8 x, uint8 y) {
+        unchecked {
+            for (uint256 idx = 0; idx < 64;) {
+                if (board[idx].player == _player && board[idx].pieceType == PieceType.King) {
+                    return position(idx);
+                }
+                ++idx;
+            }
+        }
+    }
+
+    /// @dev Generate an array index from the `x`and `y`chess position
+    function index(uint256 x, uint256 y) internal pure returns (uint256 idx) {
+        unchecked {
+            idx = x * 8 + y;
+        }
+    }
+
+    /// @dev Get a chess position from the array index
+    function position(uint256 idx) internal pure returns (uint8 x, uint8 y) {
+        unchecked {
+            x = uint8(idx / 8);
+            y = uint8(idx % 8);
         }
     }
 }

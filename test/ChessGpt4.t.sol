@@ -27,6 +27,13 @@ ChessGpt4Test:test_foolsMate() (gas: 177526823)
 ChessGpt4Test:test_pawnCapture() (gas: 29647345)
 ChessGpt4Test:test_scholarsMate() (gas: 223461123) -> Was test_pawnMove
 
+=== Flatten the board to a single array dimension, and review all the for loops in that's sence ===
+| move                                 | 1905588         | 10402638 | 4365811 | 74500429 | 20      |
+ChessGpt4Test:test_enPassantMate() (gas: 16432034)
+ChessGpt4Test:test_foolsMate() (gas: 70250876)
+ChessGpt4Test:test_pawnCapture() (gas: 15429573)
+ChessGpt4Test:test_scholarsMate() (gas: 106008682)
+
  */
 
 /// @dev Test our chess game gpt4 contract
